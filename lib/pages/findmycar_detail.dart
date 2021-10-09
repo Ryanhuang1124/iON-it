@@ -248,9 +248,6 @@ class _FindMyCarDetailState extends State<FindMyCarDetail> {
                         });
                       }
                     });
-
-
-
                   },
                 ),
               );
