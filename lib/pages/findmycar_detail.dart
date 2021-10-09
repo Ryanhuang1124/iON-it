@@ -30,10 +30,13 @@ class _FindMyCarDetailState extends State<FindMyCarDetail> {
 
   GoogleMapController _mapController;
 
-  void afterOnTapping(Position position) async {
+
+
+  Future<bool> doTheMapThing(Position position) async {
     await waitForGoogleMap(
         _mapController, LatLng(position.latitude, position.longitude));
     bool result = await makeRoute(position).whenComplete(() {});
+    return result;
   }
 
   Future<bool> _checkLocationServiceEnable() async {
@@ -128,7 +131,9 @@ class _FindMyCarDetailState extends State<FindMyCarDetail> {
         position: LatLng(myLocation.latitude, myLocation.longitude));
     Marker markerDestination = Marker(
         infoWindow: InfoWindow(title: widget.vehicleName),
-        onTap: () {},
+        onTap: (){
+          _mapController.showMarkerInfoWindow(MarkerId('Destination'));
+        },
         markerId: mDestinationId,
         icon: customMarker,
         position: LatLng(desLat, desLng));
@@ -207,14 +212,18 @@ class _FindMyCarDetailState extends State<FindMyCarDetail> {
 
   @override
   Widget build(BuildContext context) {
+
     return FutureBuilder<Position>(
         future: myLocation,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.done) {
+
+
             if (snapshot.hasData) {
+
               return Scaffold(
                 appBar: AppBar(
-                  title: Text('Find my car'),
+                  title: Text('Find my car',style: TextStyle( fontFamily: 'Arial'),),
                 ),
                 body: GoogleMap(
                   mapToolbarEnabled: false,
@@ -230,26 +239,27 @@ class _FindMyCarDetailState extends State<FindMyCarDetail> {
                   ),
                   onMapCreated: (controller) async {
                     _mapController = controller;
-                    await afterOnTapping(snapshot.data);
+                    await doTheMapThing(snapshot.data).then((isMapDone)async {
+                      if(isMapDone){
+                        await moveToPointCenter().then((value)async {
+                          await Future.delayed(const Duration(seconds: 1), (){
+                            controller.showMarkerInfoWindow(MarkerId('Destination'));
+                          });
+                        });
+                      }
+                    });
 
-                    await moveToPointCenter();
+
+
                   },
                 ),
               );
             } else {
+
               return Scaffold(
                 appBar: AppBar(
-                  actions: [
-                    Padding(
-                      padding: const EdgeInsets.only(right: 14),
-                    )
-                  ],
-                  title: Center(
-                      child: Text(
-                    'Find my car',
-                    style: TextStyle(fontSize: 26, fontFamily: 'Arial'),
-                  )),
-                ),
+                title: Text('Find my car',style: TextStyle( fontFamily: 'Arial'),),
+          ),
                 body: Container(
                     child: Center(
                         child: Text(
@@ -260,18 +270,9 @@ class _FindMyCarDetailState extends State<FindMyCarDetail> {
             }
           } else {
             return Scaffold(
-              appBar: AppBar(
-                actions: [
-                  Padding(
-                    padding: const EdgeInsets.only(right: 14),
-                  )
-                ],
-                title: Center(
-                    child: Text(
-                  'Find my car',
-                  style: TextStyle(fontSize: 26, fontFamily: 'Arial'),
-                )),
-              ),
+              appBar:AppBar(
+              title: Text('Find my car',style: TextStyle( fontFamily: 'Arial'),),
+          ),
               body: Container(
                   child: Center(
                       child: CupertinoActivityIndicator(
