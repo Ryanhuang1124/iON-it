@@ -12,9 +12,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:location/location.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({
-    Key key,
-  }) : super(key: key);
+  final bool fromBegin;
+  const LoginPage({Key key, @required this.fromBegin}) : super(key: key);
   @override
   _LoginPageState createState() => _LoginPageState();
 }
@@ -90,7 +89,7 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<bool> _checkLocationServiceEnable() async {
     var location = new Location();
-    bool _serviceEnabled;
+    bool _serviceEnabled = false;
 
     _serviceEnabled = await location.serviceEnabled();
     if (!_serviceEnabled) {
@@ -101,7 +100,7 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<Position> _determinePosition() async {
     print('into determine position');
-    bool serviceEnabled;
+    bool serviceEnabled = false;
     LocationPermission permission;
 
     // Test if location services are enabled.

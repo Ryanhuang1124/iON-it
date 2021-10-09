@@ -1,8 +1,6 @@
 # ion_it
 
 iON-it app.
-version : 1.7.0
-(iOS 1st version)
 
 ## Getting Started
 

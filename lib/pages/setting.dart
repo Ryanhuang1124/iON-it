@@ -195,12 +195,12 @@ class _SettingState extends State<Setting> {
                                                                       true)
                                                               .pop());
                                                   if (result) {
-                                                    Navigator.of(context)
-                                                        .pushNamedAndRemoveUntil(
-                                                            '/login',
-                                                            (Route<dynamic>
-                                                                    route) =>
-                                                                false);
+                                                    Navigator.pushAndRemoveUntil(
+                                                        context,
+                                                        MaterialPageRoute(
+                                                            builder: (context) =>
+                                                                LoginPage()),
+                                                        (route) => false);
                                                   }
                                                 },
                                                 child: Text("Yes"),

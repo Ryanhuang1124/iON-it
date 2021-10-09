@@ -19,6 +19,7 @@ import 'package:ion_it/pages/setting.dart';
 import 'package:ion_it/pages/smartfence_page.dart';
 import 'dart:async';
 import 'package:ion_it/widgets/customInfoWidget.dart';
+import 'package:location/location.dart' as locate;
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:ion_it/main.dart';
@@ -70,6 +71,21 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         }
       },
     );
+  }
+
+  void _currentLocation() async {
+    var currentLocation;
+    try {
+      var currentLocation = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high);
+      await _mapController.animateCamera(CameraUpdate.newCameraPosition(
+        CameraPosition(
+          bearing: 0,
+          target: LatLng(currentLocation.latitude, currentLocation.longitude),
+          zoom: 17.0,
+        ),
+      ));
+    } catch (err) {}
   }
 
   Future<String> getAddress(LatLng point) async {
@@ -239,12 +255,14 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                         padding: EdgeInsets.only(right: 17, left: 17),
                         child: Row(
                           children: [
-                            Text(
-                              "${item.value.value[0]} ",
-                              style:
-                                  TextStyle(fontSize: 15, fontFamily: 'Arial'),
+                            Expanded(
+                              child: Text(
+                                "${item.value.value[0]} ",
+                                maxLines: 2,
+                                style: TextStyle(
+                                    fontSize: 15, fontFamily: 'Arial'),
+                              ),
                             ),
-                            Expanded(child: SizedBox()),
                             Container(
                               child: Row(
                                 children: [
@@ -253,7 +271,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                       child: SvgPicture.asset(
                                         'assets/svg/clock.svg',
                                       )),
-                                  Text(item.value.value[3]),
+                                  Text(item.value.value[3],
+                                      style: TextStyle(
+                                          fontSize: 15, fontFamily: 'Arial')),
                                 ],
                               ),
                             )
@@ -277,18 +297,17 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                 child: SvgPicture.asset(
                                   'assets/svg/locate_infowindow.svg',
                                 )),
-                            SizedBox(
-                              width: 10,
+                            Expanded(
+                              child: Text(
+                                item.value.address == null
+                                    ? ''
+                                    : item.value.address,
+                                maxLines: 2,
+                                style: TextStyle(
+                                    fontSize: 13, fontFamily: 'Arial'),
+                                overflow: TextOverflow.visible,
+                              ),
                             ),
-                            Text(
-                              item.value.address == null
-                                  ? ''
-                                  : item.value.address,
-                              style:
-                                  TextStyle(fontSize: 15, fontFamily: 'Arial'),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            Expanded(child: SizedBox()),
                           ],
                         ),
                       ),
@@ -864,6 +883,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         ],
       ),
       body: GoogleMap(
+        myLocationEnabled: true,
+        myLocationButtonEnabled: false,
         markers: Set<Marker>.of(Provider.of<Data>(context).markers.values),
         zoomGesturesEnabled: true,
         mapToolbarEnabled: false,
@@ -897,25 +918,44 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           // });
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        child: Icon(
-          Icons.directions_car_rounded,
-          size: 35,
-        ),
-        onPressed: () {
-          _timer.cancel();
-          Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => SelectVehicleHome(
-                        jsonData: widget.jsonData,
-                      ))).then((value) {
-            setState(() {
-              combineMarker(0);
-              startTimer();
-            });
-          });
-        },
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          FloatingActionButton(
+            backgroundColor: Colors.white,
+            heroTag: 'btn2',
+            child: Icon(
+              Icons.my_location_rounded,
+              size: 35,
+              color: Colors.black,
+            ),
+            onPressed: _currentLocation,
+          ),
+          SizedBox(
+            height: 12,
+          ),
+          FloatingActionButton(
+            heroTag: 'btn1',
+            child: Icon(
+              Icons.directions_car_rounded,
+              size: 35,
+            ),
+            onPressed: () {
+              _timer.cancel();
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => SelectVehicleHome(
+                            jsonData: widget.jsonData,
+                          ))).then((value) {
+                setState(() {
+                  combineMarker(0);
+                  startTimer();
+                });
+              });
+            },
+          ),
+        ],
       ),
     );
   }

@@ -7,6 +7,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:ion_it/pages/home_page.dart';
 import 'package:flutter/material.dart';
+import 'package:page_transition/page_transition.dart';
 
 class FindMyCar extends StatefulWidget {
   final String jsonData;
@@ -60,22 +61,6 @@ class _FindMyCarState extends State<FindMyCar> {
     return allVehiclesData;
   }
 
-  Future<void> _launchUniversalLinkIos(String url) async {
-    if (await canLaunch(url)) {
-      final bool nativeAppLaunchSucceeded = await launch(
-        url,
-        forceSafariVC: false,
-        universalLinksOnly: true,
-      );
-      if (!nativeAppLaunchSucceeded) {
-        await launch(
-          url,
-          forceSafariVC: true,
-        );
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
@@ -102,6 +87,7 @@ class _FindMyCarState extends State<FindMyCar> {
                     snapshot.data.forEach((key, value) {
                       idList.add(key);
                     });
+
                     return ListView.builder(
                         shrinkWrap: true,
                         itemCount: snapshot.data.length,
@@ -111,11 +97,15 @@ class _FindMyCarState extends State<FindMyCar> {
                               List<String> destination =
                                   snapshot.data[idList[i]][1].split(',');
                               Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) => FindMyCarDetail(
+                                      context,
+                                      PageTransition(
+                                          child: FindMyCarDetail(
                                             destination: destination,
-                                          ))).then((value) {
+                                            vehicleName:
+                                                snapshot.data[idList[i]][0],
+                                          ),
+                                          type: PageTransitionType.rightToLeft))
+                                  .then((value) {
                                 //call back here
                               });
                               //
