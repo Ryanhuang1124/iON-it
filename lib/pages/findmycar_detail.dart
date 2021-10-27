@@ -1,13 +1,25 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:math';
-
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+import 'package:app_settings/app_settings.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
+import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
+import 'package:ion_it/main.dart';
 import 'package:location/location.dart';
+import 'package:provider/provider.dart';
+
+class Position {
+  var latitude;
+  var longitude;
+  Position(var latitude, var longitude) {
+    this.latitude = latitude;
+    this.longitude = longitude;
+  }
+}
 
 class FindMyCarDetail extends StatefulWidget {
   final List<String> destination;
@@ -25,12 +37,32 @@ class _FindMyCarDetailState extends State<FindMyCarDetail> {
   Map<PolylineId, Polyline> polylines = {};
   Map<MarkerId, Marker> markers = {};
   Future<Position> myLocation;
-  BitmapDescriptor customMarker;
   Position position;
-
   GoogleMapController _mapController;
+  Map<String, String> hintText = {
+    'en':
+        'Please allow the location services and permission.\nIf your location permission is \n" Denied Forever ", go to settings and change it.',
+    'zh': '請打開定位服務並允許位置權限。\n如果裝置位置權限為\n「永不」，請到設定中變更為其他選擇，並重新進入此頁。'
+  };
 
+  Map<String, List<String>> btnText = {
+    'en': ['settings', 'allow'],
+    'zh': ['設定', '允許'],
+  };
 
+  //turn asset image to Uint8List for marker Icon
+  Future<BitmapDescriptor> getMarkerIconFromAsset(String path) async {
+    var result;
+    ByteData data = await rootBundle.load(path);
+    ui.Codec codec = await ui.instantiateImageCodec(data.buffer.asUint8List(),
+        targetWidth: 90);
+    ui.FrameInfo fi = await codec.getNextFrame();
+    result = (await fi.image.toByteData(format: ui.ImageByteFormat.png))
+        .buffer
+        .asUint8List();
+    BitmapDescriptor.fromBytes(result);
+    return BitmapDescriptor.fromBytes(result);
+  }
 
   Future<bool> doTheMapThing(Position position) async {
     await waitForGoogleMap(
@@ -39,60 +71,34 @@ class _FindMyCarDetailState extends State<FindMyCarDetail> {
     return result;
   }
 
-  Future<bool> _checkLocationServiceEnable() async {
-    var location = new Location();
-    bool _serviceEnabled = false;
+  Future<Position> _determinePosition() async {
+    await Future.delayed(const Duration(seconds: 1), () {});
+    Location location = new Location();
+
+    bool _serviceEnabled;
+    PermissionStatus _permissionGranted;
+    LocationData _locationData;
 
     _serviceEnabled = await location.serviceEnabled();
     if (!_serviceEnabled) {
       _serviceEnabled = await location.requestService();
-    }
-    return _serviceEnabled;
-  }
-
-  Future<Position> _determinePosition() async {
-    print('into determine position');
-    await Future.delayed(const Duration(seconds: 1), () {});
-    bool serviceEnabled = false;
-    LocationPermission permission;
-
-    // Test if location services are enabled.
-    serviceEnabled = await _checkLocationServiceEnable();
-    if (!serviceEnabled) {
-      print('no service ');
-      return null;
-    }
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
+      if (!_serviceEnabled) {
+        return null;
+      }
     }
 
-    if (permission == LocationPermission.denied) {
-      // Permissions are denied, next time you could try
-      // requesting permissions again (this is also where
-      // Android's shouldShowRequestPermissionRationale
-      // returned true. According to Android guidelines
-      // your App should show an explanatory UI now.
-      print('Location permissions are denied');
-      return null;
+    _permissionGranted = await location.hasPermission();
+    if (_permissionGranted == PermissionStatus.denied) {
+      _permissionGranted = await location.requestPermission();
+      if (_permissionGranted != PermissionStatus.granted) {
+        return null;
+      }
     }
 
-    if (permission == LocationPermission.deniedForever) {
-      // Permissions are denied forever, handle appropriately.
-      print(
-          'Location permissions are permanently denied, we cannot request permissions.');
-      return null;
-    }
-
-    // When we reach here, permissions are granted and we can
-    // continue accessing the position of the device.
-
-    var position = await Geolocator.getCurrentPosition();
-
+    _locationData = await location.getLocation();
+    Position position =
+        new Position(_locationData.latitude, _locationData.longitude);
     return position;
-
-    // When we reach here, permissions are granted and we can
-    // continue accessing the position of the device.
   }
 
   Future<bool> makeRoute(Position myLocation) async {
@@ -124,18 +130,19 @@ class _FindMyCarDetailState extends State<FindMyCarDetail> {
       color: Colors.red,
       points: polylineCoordinates,
     );
-    //declare marker
+    //declare markers
     Marker markerStart = Marker(
         markerId: mStartId,
-        icon: customMarker,
+        icon: await getMarkerIconFromAsset('assets/images/marker.png'),
         position: LatLng(myLocation.latitude, myLocation.longitude));
+
     Marker markerDestination = Marker(
         infoWindow: InfoWindow(title: widget.vehicleName),
-        onTap: (){
+        onTap: () {
           _mapController.showMarkerInfoWindow(MarkerId('Destination'));
         },
         markerId: mDestinationId,
-        icon: customMarker,
+        icon: await getMarkerIconFromAsset('assets/images/marker.png'),
         position: LatLng(desLat, desLng));
 
     setState(() {
@@ -200,30 +207,21 @@ class _FindMyCarDetailState extends State<FindMyCarDetail> {
   void initState() {
     super.initState();
     myLocation = _determinePosition();
-    BitmapDescriptor.fromAssetImage(
-            ImageConfiguration(
-              size: Platform.isIOS ? Size(6, 6) : Size(12, 12),
-            ),
-            'assets/images/marker.png')
-        .then((d) {
-      customMarker = d;
-    });
   }
 
   @override
   Widget build(BuildContext context) {
-
     return FutureBuilder<Position>(
         future: myLocation,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.done) {
-
-
             if (snapshot.hasData) {
-
               return Scaffold(
                 appBar: AppBar(
-                  title: Text('Find my car',style: TextStyle( fontFamily: 'Arial'),),
+                  title: Text(
+                    'Find my car',
+                    style: TextStyle(fontFamily: 'Arial'),
+                  ),
                 ),
                 body: GoogleMap(
                   mapToolbarEnabled: false,
@@ -239,40 +237,72 @@ class _FindMyCarDetailState extends State<FindMyCarDetail> {
                   ),
                   onMapCreated: (controller) async {
                     _mapController = controller;
-                    await doTheMapThing(snapshot.data).then((isMapDone)async {
-                      if(isMapDone){
-                        await moveToPointCenter().then((value)async {
-                          await Future.delayed(const Duration(seconds: 1), (){
-                            controller.showMarkerInfoWindow(MarkerId('Destination'));
+                    await doTheMapThing(snapshot.data).then((isMapDone) async {
+                      if (isMapDone) {
+                        await moveToPointCenter().then((value) async {
+                          await Future.delayed(const Duration(seconds: 1), () {
+                            controller
+                                .showMarkerInfoWindow(MarkerId('Destination'));
                           });
                         });
                       }
                     });
-
-
-
                   },
                 ),
               );
             } else {
-
               return Scaffold(
                 appBar: AppBar(
-                title: Text('Find my car',style: TextStyle( fontFamily: 'Arial'),),
-          ),
-                body: Container(
-                    child: Center(
-                        child: Text(
-                  'Please Enable Location Service',
-                  style: TextStyle(fontFamily: 'Arial', fontSize: 22),
-                ))),
+                  title: Text(
+                    'Find my car',
+                    style: TextStyle(fontFamily: 'Arial'),
+                  ),
+                ),
+                body: Center(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Expanded(flex: 1, child: SizedBox()),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Container(
+                            child: Text(
+                          Provider.of<Data>(context, listen: false)
+                                      .localeName ==
+                                  'zh'
+                              ? hintText['zh']
+                              : hintText['en'],
+                          style: TextStyle(fontFamily: 'Arial', fontSize: 22),
+                        )),
+                      ),
+                      ElevatedButton(
+                          onPressed: AppSettings.openLocationSettings,
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(
+                              Provider.of<Data>(context, listen: false)
+                                          .localeName ==
+                                      'zh'
+                                  ? btnText['zh'][0]
+                                  : btnText['en'][0],
+                              style:
+                                  TextStyle(fontFamily: 'Arial', fontSize: 22),
+                            ),
+                          )),
+                      Expanded(flex: 5, child: SizedBox()),
+                    ],
+                  ),
+                ),
               );
             }
           } else {
             return Scaffold(
-              appBar:AppBar(
-              title: Text('Find my car',style: TextStyle( fontFamily: 'Arial'),),
-          ),
+              appBar: AppBar(
+                title: Text(
+                  'Find my car',
+                  style: TextStyle(fontFamily: 'Arial'),
+                ),
+              ),
               body: Container(
                   child: Center(
                       child: CupertinoActivityIndicator(

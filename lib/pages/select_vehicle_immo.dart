@@ -2,11 +2,9 @@ import 'dart:convert';
 import 'package:flutter_svg/svg.dart';
 import 'package:ion_it/main.dart';
 import 'package:ion_it/pages/immobilizer.dart';
-import 'package:ion_it/pages/smartfence_page.dart';
 import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:ion_it/pages/home_page.dart';
 import 'package:flutter/material.dart';
 
 class SelectVehicleImmo extends StatefulWidget {

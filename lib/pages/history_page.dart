@@ -1,7 +1,8 @@
-import 'dart:convert';
-
-import 'package:dio/dio.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'dart:ui' as ui;
+import 'package:flutter/services.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:ion_it/pages/history_detail_page.dart';
 import 'package:provider/provider.dart';
 import 'package:ion_it/main.dart';
@@ -17,6 +18,27 @@ class History extends StatefulWidget {
 }
 
 class _HistoryState extends State<History> {
+  Future<BitmapDescriptor> customMarker;
+
+  Future<BitmapDescriptor> getMarkerIconFromAsset(String path) async {
+    var result;
+    ByteData data = await rootBundle.load(path);
+    ui.Codec codec = await ui.instantiateImageCodec(data.buffer.asUint8List(),
+        targetWidth: 90);
+    ui.FrameInfo fi = await codec.getNextFrame();
+    result = (await fi.image.toByteData(format: ui.ImageByteFormat.png))
+        .buffer
+        .asUint8List();
+    BitmapDescriptor.fromBytes(result);
+    return BitmapDescriptor.fromBytes(result);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    customMarker = getMarkerIconFromAsset('assets/images/marker.png');
+  }
+
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
@@ -165,34 +187,44 @@ class _HistoryState extends State<History> {
               SizedBox(
                 height: MediaQuery.of(context).size.height / 3,
               ),
-              Padding(
-                padding: const EdgeInsets.only(left: 12, right: 12),
-                child: GestureDetector(
-                    onTap: () {
-                      //todo
-
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) =>
-                                  HistoryDetail(jsonData: widget.jsonData)));
-                    },
-                    child: Container(
-                      child: Center(
-                          child: Text(
-                        'Search',
-                        style: TextStyle(
-                            fontSize: 22,
-                            color: Colors.white,
-                            fontFamily: 'Arial'),
-                      )),
-                      width: MediaQuery.of(context).size.width,
-                      height: MediaQuery.of(context).size.height / 14,
-                      decoration: BoxDecoration(
-                          color: Colors.blue,
-                          borderRadius: BorderRadius.circular(30)),
-                    )),
-              )
+              FutureBuilder(
+                  future: customMarker,
+                  builder: (context, customMarker) {
+                    if (customMarker.hasData) {
+                      return Padding(
+                        padding: const EdgeInsets.only(left: 12, right: 12),
+                        child: GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => HistoryDetail(
+                                          jsonData: widget.jsonData,
+                                          customIcon: customMarker.data)));
+                            },
+                            child: Container(
+                              child: Center(
+                                  child: Text(
+                                'Search',
+                                style: TextStyle(
+                                    fontSize: 22,
+                                    color: Colors.white,
+                                    fontFamily: 'Arial'),
+                              )),
+                              width: MediaQuery.of(context).size.width,
+                              height: MediaQuery.of(context).size.height / 14,
+                              decoration: BoxDecoration(
+                                  color: Colors.blue,
+                                  borderRadius: BorderRadius.circular(30)),
+                            )),
+                      );
+                    } else {
+                      return Container(
+                          child: Center(
+                              child: CupertinoActivityIndicator(
+                                  radius: 20, animating: true)));
+                    }
+                  })
             ],
           ),
         ),

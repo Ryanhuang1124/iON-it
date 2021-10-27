@@ -1,11 +1,9 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:geocoding/geocoding.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:ion_it/pages/smartfence_page.dart';
 import 'package:provider/provider.dart';
@@ -14,16 +12,19 @@ import 'package:ion_it/main.dart';
 class EditLocation extends StatefulWidget {
   final LatLng position;
   final String jsonData;
+  final BitmapDescriptor markerIcon;
 
   const EditLocation(
-      {Key key, @required this.position, @required this.jsonData})
+      {Key key,
+      @required this.position,
+      @required this.jsonData,
+      @required this.markerIcon})
       : super(key: key);
   @override
   _EditLocationState createState() => _EditLocationState();
 }
 
 class _EditLocationState extends State<EditLocation> {
-  BitmapDescriptor customMarker;
   GoogleMapController _mapController;
   Map<String, Marker> point = {};
   String address;
@@ -66,7 +67,7 @@ class _EditLocationState extends State<EditLocation> {
     });
 
     Marker marker = Marker(
-      icon: customMarker,
+      icon: widget.markerIcon,
       markerId: MarkerId(position.toString()),
       position: position,
     );
@@ -78,16 +79,6 @@ class _EditLocationState extends State<EditLocation> {
   @override
   void initState() {
     super.initState();
-    print('8989');
-    BitmapDescriptor.fromAssetImage(
-            ImageConfiguration(
-              size: Platform.isIOS ? Size(100, 100) : Size(6, 6),
-            ),
-            'assets/images/marker.png')
-        .then((d) {
-      customMarker = d;
-      print(customMarker);
-    });
   }
 
   @override
@@ -185,7 +176,7 @@ class _EditLocationState extends State<EditLocation> {
         myLocationEnabled: true,
         onMapCreated: (mapController) {
           Marker marker = Marker(
-            icon: customMarker,
+            icon: widget.markerIcon,
             markerId: MarkerId(widget.position.toString()),
             position: Provider.of<Data>(context, listen: false)
                         .smartFenceMarker ==

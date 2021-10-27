@@ -2,12 +2,9 @@ import 'dart:convert';
 import 'package:flutter_svg/svg.dart';
 import 'package:ion_it/main.dart';
 import 'package:ion_it/pages/history_page.dart';
-import 'package:ion_it/pages/immobilizer.dart';
-import 'package:ion_it/pages/smartfence_page.dart';
 import 'package:provider/provider.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:ion_it/pages/home_page.dart';
 import 'package:flutter/material.dart';
 
 class SelectVehicleHistory extends StatefulWidget {
@@ -21,6 +18,7 @@ class SelectVehicleHistory extends StatefulWidget {
 
 class _SelectVehicleHistoryState extends State<SelectVehicleHistory> {
   String id;
+
   Future<Map<dynamic, List>> getVehicles() async {
     Map<dynamic, List> allVehiclesData = <dynamic, List>{};
     List<String> idList = [];
@@ -64,6 +62,11 @@ class _SelectVehicleHistoryState extends State<SelectVehicleHistory> {
   }
 
   @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
@@ -94,7 +97,7 @@ class _SelectVehicleHistoryState extends State<SelectVehicleHistory> {
                     height: 30,
                     color: Colors.white,
                   ))),
-            )
+            ),
           ],
           title: Center(
               child: Text(
@@ -116,7 +119,6 @@ class _SelectVehicleHistoryState extends State<SelectVehicleHistory> {
                         shrinkWrap: true,
                         itemCount: snapshot.data.length,
                         itemBuilder: (ctx, i) => GestureDetector(
-                          
                             onTap: () {
                               Provider.of<Data>(context, listen: false)
                                   .changeHistoryVehicle(

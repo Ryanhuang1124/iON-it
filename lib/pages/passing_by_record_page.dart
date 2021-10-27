@@ -1,7 +1,6 @@
-import 'dart:ffi';
-import 'dart:io';
-
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_datetime_picker/flutter_datetime_picker.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
@@ -23,18 +22,30 @@ class PassingByRecord extends StatefulWidget {
 }
 
 class _PassingByRecordState extends State<PassingByRecord> {
-  BitmapDescriptor customMarker;
   GoogleMapController _mapController;
   Map<String, Marker> point = {};
   Map<String, Circle> round = {};
 
-  void locationImage() {
+  Future<BitmapDescriptor> getMarkerIconFromAsset(String path) async {
+    var result;
+    ByteData data = await rootBundle.load(path);
+    ui.Codec codec = await ui.instantiateImageCodec(data.buffer.asUint8List(),
+        targetWidth: 120);
+    ui.FrameInfo fi = await codec.getNextFrame();
+    result = (await fi.image.toByteData(format: ui.ImageByteFormat.png))
+        .buffer
+        .asUint8List();
+    BitmapDescriptor.fromBytes(result);
+    return BitmapDescriptor.fromBytes(result);
+  }
+
+  void locationImage() async {
     var position = Provider.of<Data>(context, listen: false).passingPosition;
 
     Marker marker = Marker(
       position: position == null ? LatLng(25.046273, 121.517498) : position,
       visible: position != null,
-      icon: customMarker,
+      icon: await getMarkerIconFromAsset('assets/images/marker.png'),
       markerId: MarkerId('666'),
     );
     Circle circle = Circle(
@@ -80,14 +91,6 @@ class _PassingByRecordState extends State<PassingByRecord> {
 
   @override
   void initState() {
-    BitmapDescriptor.fromAssetImage(
-            ImageConfiguration(
-              size: Platform.isIOS ? Size(6, 6) : Size(12, 12),
-            ),
-            'assets/images/marker.png')
-        .then((d) {
-      customMarker = d;
-    });
     super.initState();
   }
 

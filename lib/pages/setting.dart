@@ -1,5 +1,8 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:io';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:ion_it/main.dart';
@@ -17,9 +20,99 @@ class Setting extends StatefulWidget {
 }
 
 class _SettingState extends State<Setting> {
-  Future<bool> deleteShared() async {
+  Future<bool> isShareNotificationOn() async {
+    bool isNotificationOn = false;
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    return true;
+    isNotificationOn = prefs.getBool('notification');
+
+    return isNotificationOn;
+  }
+
+  Future<bool> changeShareNotification({bool newValue}) async {
+    bool result = false;
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    result = await prefs.setBool('notification', newValue);
+    return result;
+  }
+
+  Future<bool> updateFCMToken() async {
+    String server = Provider.of<Data>(context, listen: false).server;
+    String user = Provider.of<Data>(context, listen: false).user;
+    String pass = Provider.of<Data>(context, listen: false).pass;
+    String result = '';
+    String uri = "https://web.onlinetraq.com/module/APIv1/005-2fcm.php";
+    String token = Provider.of<Data>(context, listen: false).token;
+    int fromType = Platform.isIOS ? 1 : 2;
+    var jsonData = json.encode({
+      "server": server,
+      "user": user,
+      "pass": pass,
+      "token": token,
+      "fromtype": fromType
+    });
+    FormData formData = FormData.fromMap({'data': jsonData});
+    var statusCode;
+
+    try {
+      var response = await Dio().post(uri,
+          data: formData,
+          options: Options(
+              followRedirects: false,
+              validateStatus: (status) {
+                statusCode = status;
+                return true;
+              }));
+      print(response.data);
+      Map<String, dynamic> data = json.decode(response.data);
+      (statusCode == 200) && (data['result'] == 'S')
+          ? result = 'Y'
+          : result = 'N';
+    } catch (err) {
+      print(err);
+    }
+    if (result == 'Y') {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  Future<bool> cancelFCM() async {
+    String server = Provider.of<Data>(context, listen: false).server;
+    String user = Provider.of<Data>(context, listen: false).user;
+    String pass = Provider.of<Data>(context, listen: false).pass;
+    String result = '';
+    String uri = "https://web.onlinetraq.com/module/APIv1/005-3.php";
+    var jsonData = json.encode({
+      "server": server,
+      "user": user,
+      "pass": pass,
+    });
+    FormData formData = FormData.fromMap({'data': jsonData});
+    var statusCode;
+
+    try {
+      var response = await Dio().post(uri,
+          data: formData,
+          options: Options(
+              followRedirects: false,
+              validateStatus: (status) {
+                statusCode = status;
+                return true;
+              }));
+      print(response.data);
+      Map<String, dynamic> data = json.decode(response.data);
+      (statusCode == 200) && (data['result'] == 'S')
+          ? result = 'Y'
+          : result = 'N';
+    } catch (err) {
+      print(err);
+    }
+    if (result == 'Y') {
+      return true;
+    } else {
+      return false;
+    }
   }
 
   @override
@@ -59,11 +152,45 @@ class _SettingState extends State<Setting> {
                               style:
                                   TextStyle(fontFamily: 'Arial', fontSize: 22),
                             ),
-                            CupertinoSwitch(
-                                value: Provider.of<Data>(context).pushNotSwitch,
-                                onChanged: (newValue) {
-                                  Provider.of<Data>(context, listen: false)
-                                      .changePushSwitch(newValue);
+                            FutureBuilder<bool>(
+                                future: isShareNotificationOn(),
+                                builder: (context, isNotificationOn) {
+                                  if (isNotificationOn.hasData) {
+                                    Provider.of<Data>(context, listen: false)
+                                        .changePushSwitch(
+                                            isNotificationOn.data);
+                                  }
+                                  return CupertinoSwitch(
+                                      value: Provider.of<Data>(context)
+                                          .pushNotSwitch,
+                                      onChanged: (newValue) async {
+                                        showDialog(
+                                            context: context,
+                                            barrierDismissible: false,
+                                            builder: (context) => WillPopScope(
+                                                onWillPop: () =>
+                                                    Future.value(false),
+                                                child:
+                                                    CupertinoActivityIndicator(
+                                                  radius: 20,
+                                                  animating: true,
+                                                )));
+                                        Provider.of<Data>(context,
+                                                listen: false)
+                                            .changePushSwitch(newValue);
+                                        await changeShareNotification(
+                                                newValue: newValue)
+                                            .then((value) async {
+                                          if (newValue) {
+                                            await updateFCMToken();
+                                          } else {
+                                            await cancelFCM();
+                                          }
+                                          setState(() {
+                                            Navigator.of(context).pop();
+                                          });
+                                        });
+                                      });
                                 }),
                           ],
                         ),
@@ -188,20 +315,17 @@ class _SettingState extends State<Setting> {
                                                                 radius: 20,
                                                                 animating: true,
                                                               )));
-                                                  bool result = await deleteShared()
-                                                      .whenComplete(() =>
-                                                          Navigator.of(context,
-                                                                  rootNavigator:
-                                                                      true)
-                                                              .pop());
-                                                  if (result) {
-                                                    Navigator.pushAndRemoveUntil(
-                                                        context,
-                                                        MaterialPageRoute(
-                                                            builder: (context) =>
-                                                                LoginPage()),
-                                                        (route) => false);
+                                                  if (Provider.of<Data>(context,
+                                                          listen: false)
+                                                      .pushNotSwitch) {
+                                                    await cancelFCM();
                                                   }
+                                                  Navigator.pushAndRemoveUntil(
+                                                      context,
+                                                      MaterialPageRoute(
+                                                          builder: (context) =>
+                                                              LoginPage()),
+                                                      (route) => false);
                                                 },
                                                 child: Text("Yes"),
                                               )

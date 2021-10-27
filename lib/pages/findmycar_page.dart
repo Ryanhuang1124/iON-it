@@ -2,10 +2,8 @@ import 'dart:convert';
 import 'package:ion_it/main.dart';
 import 'package:ion_it/pages/findmycar_detail.dart';
 import 'package:provider/provider.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
-import 'package:ion_it/pages/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:page_transition/page_transition.dart';
 

@@ -1,20 +1,26 @@
 import 'dart:convert';
-import 'dart:io';
-import 'dart:math';
 
+import 'dart:math';
+import 'dart:ui' as ui;
 import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:ion_it/main.dart';
 import 'package:ion_it/pages/edit_location.dart';
-import 'package:ion_it/pages/home_page.dart';
 import 'package:ion_it/pages/in_out_door.dart';
 import 'package:ion_it/pages/select_radius.dart';
+import 'package:location/location.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_sms/flutter_sms.dart';
+
+class Position {
+  var latitude;
+  var longitude;
+}
 
 class SMSData {
   String name;
@@ -37,9 +43,23 @@ class SmartFence extends StatefulWidget {
 }
 
 class _SmartFenceState extends State<SmartFence> {
-  BitmapDescriptor customMarker;
+  Future<BitmapDescriptor> customMarker;
   GoogleMapController _mapController;
   List<SMSData> smsDataList = [];
+
+  Future<BitmapDescriptor> getMarkerIconFromAsset(String path) async {
+    var result;
+    ByteData data = await rootBundle.load(path);
+    ui.Codec codec = await ui.instantiateImageCodec(data.buffer.asUint8List(),
+        targetWidth: 120);
+    ui.FrameInfo fi = await codec.getNextFrame();
+    result = (await fi.image.toByteData(format: ui.ImageByteFormat.png))
+        .buffer
+        .asUint8List();
+    BitmapDescriptor.fromBytes(result);
+    return BitmapDescriptor.fromBytes(result);
+  }
+
   String generateRandomString(int len) {
     var r = Random();
     const _chars =
@@ -255,15 +275,7 @@ class _SmartFenceState extends State<SmartFence> {
   @override
   void initState() {
     super.initState();
-
-    BitmapDescriptor.fromAssetImage(
-            ImageConfiguration(
-              size: Platform.isIOS ? Size(6, 6) : Size(12, 12),
-            ),
-            'assets/images/marker.png')
-        .then((d) {
-      customMarker = d;
-    });
+    customMarker = getMarkerIconFromAsset('assets/images/marker.png');
   }
 
   @override
@@ -292,13 +304,6 @@ class _SmartFenceState extends State<SmartFence> {
             Provider.of<Data>(context, listen: false)
                 .smartData[obj.smartFenceVehicle] = obj;
           }
-          Map<String, Marker> markers = {};
-          Marker mark = Marker(
-              icon: customMarker,
-              markerId: MarkerId(id.toString()),
-              position: location);
-          markers[id] = mark;
-
           Map<String, Circle> circles = {};
           Circle circle = Circle(
             circleId: CircleId(id),
@@ -398,63 +403,85 @@ class _SmartFenceState extends State<SmartFence> {
                               SizedBox(
                                 width: MediaQuery.of(context).size.width / 100,
                               ),
-                              GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) => EditLocation(
-                                                position: location,
-                                                jsonData: widget.jsonData,
-                                              ))).then((value) {
-                                    if (Provider.of<Data>(context,
-                                                listen: false)
-                                            .smartData[name]
-                                            .smartFenceLocation !=
-                                        null) {
-                                      _mapController.animateCamera(CameraUpdate
-                                          .newCameraPosition(CameraPosition(
-                                              target: LatLng(
-                                                  Provider.of<Data>(context,
-                                                              listen: false)
-                                                          .smartData[name]
-                                                          .smartFenceLocation
-                                                          .latitude -
-                                                      0.001,
-                                                  Provider.of<Data>(context,
-                                                          listen: false)
-                                                      .smartData[name]
-                                                      .smartFenceLocation
-                                                      .longitude),
-                                              zoom: 16)));
+                              FutureBuilder(
+                                  future: customMarker,
+                                  builder: (context, customMarker) {
+                                    if (customMarker.hasData) {
+                                      return GestureDetector(
+                                        onTap: () {
+                                          Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                  builder: (context) =>
+                                                      EditLocation(
+                                                        position: location,
+                                                        jsonData:
+                                                            widget.jsonData,
+                                                        markerIcon:
+                                                            customMarker.data,
+                                                      ))).then((value) {
+                                            if (Provider.of<Data>(context,
+                                                        listen: false)
+                                                    .smartData[name]
+                                                    .smartFenceLocation !=
+                                                null) {
+                                              _mapController.animateCamera(CameraUpdate
+                                                  .newCameraPosition(CameraPosition(
+                                                      target: LatLng(
+                                                          Provider.of<Data>(
+                                                                      context,
+                                                                      listen:
+                                                                          false)
+                                                                  .smartData[
+                                                                      name]
+                                                                  .smartFenceLocation
+                                                                  .latitude -
+                                                              0.001,
+                                                          Provider.of<Data>(
+                                                                  context,
+                                                                  listen: false)
+                                                              .smartData[name]
+                                                              .smartFenceLocation
+                                                              .longitude),
+                                                      zoom: 16)));
+                                            }
+                                          });
+                                        },
+                                        child: Container(
+                                          child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              SvgPicture.asset(
+                                                'assets/svg/editlocation.svg',
+                                                height: 40,
+                                              ),
+                                              SizedBox(
+                                                height: 10,
+                                              ),
+                                              Center(
+                                                  child: Text(
+                                                'Edit location',
+                                                style: TextStyle(
+                                                    color: Colors.grey),
+                                              )),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    } else {
+                                      return Container(
+                                          child: Center(
+                                              child: CupertinoActivityIndicator(
+                                                  radius: 20,
+                                                  animating: true)));
                                     }
-                                  });
-                                },
-                                child: Container(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      SvgPicture.asset(
-                                        'assets/svg/editlocation.svg',
-                                        height: 40,
-                                      ),
-                                      SizedBox(
-                                        height: 10,
-                                      ),
-                                      Center(
-                                          child: Text(
-                                        'Edit location',
-                                        style: TextStyle(color: Colors.grey),
-                                      )),
-                                    ],
-                                  ),
-                                ),
-                              ),
+                                  }),
                               SizedBox(
                                 width: MediaQuery.of(context).size.width / 100,
                               ),
                               GestureDetector(
-                                onTap: () {
+                                onTap: () async {
                                   Navigator.push(
                                       context,
                                       MaterialPageRoute(

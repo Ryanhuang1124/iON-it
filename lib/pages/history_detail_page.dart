@@ -1,12 +1,9 @@
 import 'dart:convert';
-import 'dart:io';
 import 'dart:math';
-
 import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:geocoding/geocoding.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:ion_it/main.dart';
@@ -25,7 +22,11 @@ class HistoryRouteData {
 class HistoryDetail extends StatefulWidget {
   final String jsonData;
 
-  const HistoryDetail({Key key, @required this.jsonData}) : super(key: key);
+  final BitmapDescriptor customIcon;
+
+  const HistoryDetail(
+      {Key key, @required this.jsonData, @required this.customIcon})
+      : super(key: key);
 
   @override
   _HistoryDetailState createState() => _HistoryDetailState();
@@ -39,7 +40,7 @@ class _HistoryDetailState extends State<HistoryDetail> {
   List<Widget> containerList = [];
 
   Future<List<HistoryRouteData>> historyRouteData;
-  BitmapDescriptor customMarker;
+  Future<BitmapDescriptor> customMarker;
 
   CameraUpdate centerPoint;
 
@@ -60,6 +61,8 @@ class _HistoryDetailState extends State<HistoryDetail> {
 
     if (finalData['status'] == 'S' && response.statusCode == 200) {
       return finalData['data'];
+    } else {
+      return null;
     }
   }
 
@@ -162,14 +165,6 @@ class _HistoryDetailState extends State<HistoryDetail> {
   @override
   void initState() {
     super.initState();
-    BitmapDescriptor.fromAssetImage(
-            ImageConfiguration(
-              size: Platform.isIOS ? Size(6, 6) : Size(12, 12),
-            ),
-            'assets/images/marker.png')
-        .then((d) {
-      customMarker = d;
-    });
     historyRouteData = getVehicleHistory();
   }
 
@@ -223,7 +218,7 @@ class _HistoryDetailState extends State<HistoryDetail> {
                 marks.add(Marker(
                     markerId: MarkerId(snapshot.data[0].stDate.toString()),
                     position: position,
-                    icon: customMarker));
+                    icon: widget.customIcon));
               }
 
               for (var obj in snapshot.data) {

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>165501878030-7gjg8uk086f1efvhdq5g82dg397q9te4.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.165501878030-7gjg8uk086f1efvhdq5g82dg397q9te4</string>
+	<key>API_KEY</key>
+	<string>AIzaSyBfgUEiiBXTY6EidRuXlW7ygZ_XIW4qFf4</string>
+	<key>GCM_SENDER_ID</key>
+	<string>165501878030</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>tw.com.arknavgps</string>
+	<key>PROJECT_ID</key>
+	<string>ion-it</string>
+	<key>STORAGE_BUCKET</key>
+	<string>ion-it.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:165501878030:ios:6ea7a62212e0cf2aae215f</string>
+</dict>
+</plist>

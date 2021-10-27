@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:ion_it/main.dart';
-import 'package:ion_it/widgets/customInfoWidget.dart';
 import 'package:provider/provider.dart';
 import 'dart:ui' as ui;
 import 'package:http/http.dart' as http;
@@ -141,7 +140,7 @@ class _SelectVehicleHomeState extends State<SelectVehicleHome> {
 
     //resize and transform
     var codec = await ui.instantiateImageCodec(originalUnit8List,
-        targetHeight: 120, targetWidth: 120);
+        targetHeight: 90, targetWidth: 90);
     var frameInfo = await codec.getNextFrame();
     ui.Image targetUiImage = frameInfo.image;
     ByteData targetByteData =

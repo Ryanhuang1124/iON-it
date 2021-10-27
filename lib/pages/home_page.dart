@@ -1,12 +1,11 @@
 import 'dart:convert';
 import 'dart:math';
-import 'dart:typed_data';
-import 'dart:ui' as ui;
+
+import 'package:app_settings/app_settings.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:ion_it/pages/findmycar_page.dart';
 import 'package:ion_it/pages/passing_by_record_page.dart';
@@ -16,18 +15,21 @@ import 'package:ion_it/pages/select_vehicle_history.dart';
 import 'package:ion_it/pages/select_vehicle_home.dart';
 import 'package:ion_it/pages/select_vehicle_immo.dart';
 import 'package:ion_it/pages/setting.dart';
-import 'package:ion_it/pages/smartfence_page.dart';
 import 'dart:async';
 import 'package:ion_it/widgets/customInfoWidget.dart';
-import 'package:location/location.dart' as locate;
+import 'package:location/location.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
 import 'package:ion_it/main.dart';
-import 'package:geocoding/geocoding.dart';
-import 'dart:math' show cos, sqrt, asin;
-import 'dart:async';
-
 import 'package:shared_preferences/shared_preferences.dart';
+
+class Position {
+  var latitude;
+  var longitude;
+  Position(var latitude, var longitude) {
+    this.latitude = latitude;
+    this.longitude = longitude;
+  }
+}
 
 class PointObject {
   String name;
@@ -49,6 +51,16 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   GoogleMapController _mapController;
   Timer _timer;
   int _start = 60;
+  Map<String, String> hintText = {
+    'en':
+        'Please allow the location services and permission.\nIf your location permission is \n" Denied Forever ", go to settings and change it.',
+    'zh': '請打開定位服務並允許位置權限。\n如果裝置位置權限為\n「永不」，請到設定中變更為其他選擇。'
+  };
+
+  Map<String, List<String>> btnText = {
+    'en': ['settings', 'allow'],
+    'zh': ['設定', '允許'],
+  };
 
   void startTimer() {
     const oneSec = const Duration(seconds: 1);
@@ -73,19 +85,66 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     );
   }
 
-  void _currentLocation() async {
-    var currentLocation;
-    try {
-      var currentLocation = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high);
-      await _mapController.animateCamera(CameraUpdate.newCameraPosition(
-        CameraPosition(
-          bearing: 0,
-          target: LatLng(currentLocation.latitude, currentLocation.longitude),
-          zoom: 17.0,
+  void _determinePosition() async {
+    Location location = new Location();
+    bool _serviceEnabled;
+    PermissionStatus _permissionGranted;
+    LocationData _locationData;
+    _serviceEnabled = await location.serviceEnabled();
+    _permissionGranted = await location.hasPermission();
+    if ((!_serviceEnabled) ||
+        (_permissionGranted != PermissionStatus.granted)) {
+      await showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          actions: [
+            TextButton(
+                onPressed: AppSettings.openLocationSettings,
+                child: Text(
+                    Provider.of<Data>(context, listen: false).localeName == 'zh'
+                        ? btnText['zh'][0]
+                        : btnText['en'][0])),
+            TextButton(
+                onPressed: () async {
+                  if (!_serviceEnabled) {
+                    _serviceEnabled = await location.requestService();
+                  }
+                  if (_permissionGranted == PermissionStatus.denied) {
+                    _permissionGranted = await location.requestPermission();
+                  }
+                  Navigator.of(context).pop();
+                },
+                child: Text(
+                    Provider.of<Data>(context, listen: false).localeName == 'zh'
+                        ? btnText['zh'][1]
+                        : btnText['en'][1])),
+          ],
+          title: Text(
+              Provider.of<Data>(context, listen: false).localeName == 'zh'
+                  ? '需要定位權限'
+                  : 'Location Services Needed'),
+          content: Text(
+            Provider.of<Data>(context, listen: false).localeName == 'zh'
+                ? hintText['zh']
+                : hintText['en'],
+          ),
         ),
-      ));
-    } catch (err) {}
+        barrierDismissible: false,
+      );
+    }
+    _serviceEnabled = await location.serviceEnabled();
+    _permissionGranted = await location.hasPermission();
+    if (_serviceEnabled && _permissionGranted == PermissionStatus.granted) {
+      _locationData = await location.getLocation();
+      await _mapController.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: LatLng(_locationData.latitude, _locationData.longitude),
+            zoom: 16,
+          ),
+        ),
+      );
+    }
   }
 
   Future<String> getAddress(LatLng point) async {
@@ -160,25 +219,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         address;
   }
 
-  Future<String> getImageID(String deviceID) async {
-    String imageID;
-
-    String uri = "https://web.onlinetraq.com/module/APIv1/003-1.php";
-    FormData formData = FormData.fromMap({'data': widget.jsonData});
-    var response = await Dio().post(uri, data: formData);
-    Map<String, dynamic> data = json.decode(response.data);
-
-    for (var item in data['data']) {
-      if (item['id'] == deviceID) {
-        imageID = item['icon'];
-      }
-    }
-    if (imageID.isEmpty) {
-      imageID = '151';
-    }
-    return imageID;
-  }
-
   Future<Map<dynamic, List>> getVehicles() async {
     Map<dynamic, List> allVehiclesData = <dynamic, List>{};
     List<String> idList = [];
@@ -231,10 +271,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         point.location =
             LatLng(double.parse(latlng[0]), double.parse(latlng[1]));
 
+        var obj;
         Marker marker = Marker(
           onTap: () async {
-            print('marker onTap');
-
             // Provider.of<Data>(context,listen: false).changeIsShowingInfoWindow();
             final RenderBox renderBox = context.findRenderObject();
             Rect _itemRect =
@@ -883,13 +922,21 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         ],
       ),
       body: GoogleMap(
-        myLocationEnabled: true,
+        myLocationEnabled: false,
         myLocationButtonEnabled: false,
         markers: Set<Marker>.of(Provider.of<Data>(context).markers.values),
         zoomGesturesEnabled: true,
         mapToolbarEnabled: false,
         onMapCreated: (mapController) async {
           _mapController = mapController;
+          await _mapController.animateCamera(CameraUpdate.newCameraPosition(
+            CameraPosition(
+              target: widget.myLocation == null
+                  ? LatLng(24.96538069686663, 121.43875091494725)
+                  : widget.myLocation,
+              zoom: 17,
+            ),
+          ));
         },
         compassEnabled: false,
         initialCameraPosition: CameraPosition(
@@ -899,43 +946,27 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           zoom: 16.5,
         ),
         zoomControlsEnabled: false,
-        onCameraMove: (newPosition) {
-          // _mapIdleSubscription?.cancel();
-          // _mapIdleSubscription = Future.delayed(Duration(milliseconds: 150))
-          //     .asStream()
-          //     .listen((_) async {
-          //   if (_infoWidgetRoute != null) {
-          //     print('cameraMoving listening');
-          //
-          //     Navigator.of(context, rootNavigator: true)
-          //         .push(_infoWidgetRoute)
-          //         .then<void>(
-          //       (newValue) {
-          //         _infoWidgetRoute = null;
-          //       },
-          //     );
-          //   }
-          // });
-        },
       ),
       floatingActionButton: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
           FloatingActionButton(
+            heroTag: 'myLocation',
             backgroundColor: Colors.white,
-            heroTag: 'btn2',
             child: Icon(
               Icons.my_location_rounded,
               size: 35,
               color: Colors.black,
             ),
-            onPressed: _currentLocation,
+            onPressed: () async {
+              await _determinePosition();
+            },
           ),
           SizedBox(
-            height: 12,
+            height: MediaQuery.of(context).size.height * 0.015,
           ),
           FloatingActionButton(
-            heroTag: 'btn1',
+            heroTag: 'myCars',
             child: Icon(
               Icons.directions_car_rounded,
               size: 35,

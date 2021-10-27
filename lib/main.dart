@@ -1,4 +1,9 @@
+import 'dart:io';
+
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:ion_it/pages/home_page.dart';
 import 'package:ion_it/pages/login_page.dart';
@@ -10,14 +15,58 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
+  await doFirebaseConfig();
   runApp(Ion_it());
 }
 
+void doFirebaseConfig() async {
+  await Firebase.initializeApp();
+
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+  await flutterLocalNotificationsPlugin
+      .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin>()
+      ?.createNotificationChannel(channel);
+  await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
+    alert: true,
+    badge: true,
+    sound: true,
+  );
+
+  //ios request permission
+  FirebaseMessaging messaging = FirebaseMessaging.instance;
+  NotificationSettings settings = await messaging.requestPermission(
+    alert: true,
+    announcement: false,
+    badge: true,
+    carPlay: false,
+    criticalAlert: false,
+    provisional: false,
+    sound: true,
+  );
+}
+
+const AndroidNotificationChannel channel = AndroidNotificationChannel(
+    'high_importance_channel', // id
+    'High Importance Notifications', // title
+    description:
+        'This channel is used for important notifications.', // description
+    importance: Importance.high,
+    playSound: true);
+
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
+
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+}
+
 class Data extends ChangeNotifier {
+  String localeName;
   String server;
   String user;
   String pass;
+  var token;
   bool allCheckedValue = false;
   List<bool> checkBoxValue = [];
   double smartFenceRadius = 150;
@@ -104,9 +153,7 @@ class Data extends ChangeNotifier {
   }
 
   void changeHistoryStTime(DateTime date) {
-    print(date);
     this.historyStTime = date;
-    print(this.historyStTime);
     notifyListeners();
   }
 
@@ -132,7 +179,6 @@ class Data extends ChangeNotifier {
 
   void changePushSwitch(bool newValue) {
     this.pushNotSwitch = newValue;
-    notifyListeners();
   }
 
   void changeEventFilter(String filterBy) {
@@ -186,6 +232,14 @@ class Ion_it extends StatefulWidget {
 class _Ion_itState extends State<Ion_it> {
   LatLng myLocation;
 
+  Future<bool> isShareNotificationOn() async {
+    bool isNotificationOn = false;
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    isNotificationOn = prefs.getBool('notification');
+
+    return isNotificationOn;
+  }
+
   Future<List<String>> getSharedAccount() async {
     List<String> accountData;
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -195,7 +249,44 @@ class _Ion_itState extends State<Ion_it> {
 
   @override
   void initState() {
-    getSharedAccount();
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      RemoteNotification notification = message.notification;
+      AndroidNotification android = message.notification?.android;
+      if (notification != null && android != null) {
+        flutterLocalNotificationsPlugin.show(
+            notification.hashCode,
+            notification.title,
+            notification.body,
+            NotificationDetails(
+              android: AndroidNotificationDetails(channel.id, channel.name,
+                  channelDescription: channel.description,
+                  color: Colors.blue,
+                  playSound: true,
+                  icon: '@mipmap/ic_launcher',
+                  importance: Importance.max),
+            ));
+      }
+    });
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      RemoteNotification notification = message.notification;
+      AndroidNotification android = message.notification?.android;
+      if (notification != null && android != null) {
+        showDialog(
+            context: context,
+            builder: (_) {
+              return AlertDialog(
+                title: Text(notification.title),
+                content: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [Text(notification.body)],
+                  ),
+                ),
+              );
+            });
+      }
+    });
+
     super.initState();
   }
 
@@ -211,13 +302,34 @@ class _Ion_itState extends State<Ion_it> {
           home: FutureBuilder<List<String>>(
               future: getSharedAccount(),
               builder: (context, snapshot) {
+                final String defaultLocale = Platform.localeName.split('_')[0];
+                Provider.of<Data>(context).localeName = defaultLocale;
                 if (snapshot.hasData) {
                   Provider.of<Data>(context, listen: false).changeLoginData(
                       snapshot.data[0], snapshot.data[1], snapshot.data[2]);
-                  return LoginPage();
-                } else {
-                  return LoginPage(); //first login
                 }
+                return FutureBuilder<bool>(
+                  future: isShareNotificationOn(),
+                  builder: (context, isNotificationOn) {
+                    if (isNotificationOn.hasData) {
+                      Provider.of<Data>(context, listen: false)
+                          .changePushSwitch(isNotificationOn.data);
+                    }
+                    return FutureBuilder(
+                      future: FirebaseMessaging.instance.getToken(),
+                      builder: (context, token) {
+                        if (token.hasData) {
+                          Provider.of<Data>(context, listen: false).token =
+                              token.data;
+                        } else {
+                          Provider.of<Data>(context, listen: false).token =
+                              'invalid';
+                        }
+                        return LoginPage();
+                      },
+                    );
+                  },
+                );
               }),
         ));
   }

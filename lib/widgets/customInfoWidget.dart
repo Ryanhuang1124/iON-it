@@ -9,20 +9,15 @@ class _InfoWidgetRouteLayout<T> extends SingleChildLayoutDelegate {
 
   _InfoWidgetRouteLayout(
       {@required this.mapsWidgetSize,
-        @required this.height,
-        @required this.width});
-
-  /// Depending of the size of the marker or the widget, the offset in y direction has to be adjusted;
-  /// If the appear to be of different size, the commented code can be uncommented and
-  /// adjusted to get the right position of the Widget.
-  /// Or better: Adjust the marker size based on the device pixel ratio!!!!)
+      @required this.height,
+      @required this.width});
 
   @override
   Offset getPositionForChild(Size size, Size childSize) {
 //    if (Platform.isIOS) {
     return Offset(
       mapsWidgetSize.center.dx - childSize.width / 2,
-      mapsWidgetSize.center.dy - childSize.height*1.37 ,
+      mapsWidgetSize.center.dy - childSize.height * 1.44,
     );
 //    } else {
 //      return Offset(

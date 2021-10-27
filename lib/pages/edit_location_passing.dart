@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:ion_it/main.dart';
-import 'package:ion_it/pages/passing_by_record_page.dart';
 import 'package:provider/provider.dart';
 
 class EditLocationPassing extends StatefulWidget {
@@ -25,25 +24,6 @@ class _EditLocationPassingState extends State<EditLocationPassing> {
   Map<String, Circle> round = {};
 
   var textController = TextEditingController();
-
-  // handleTap(LatLng position){
-  //
-  //   Marker marker = Marker(
-  //     icon: customMarker,
-  //     markerId: MarkerId(position.toString()),
-  //     position: position,
-  //   );
-  //   Circle circle=Circle(
-  //     visible: true,
-  //     radius: Provider.of<Data>(context,listen: false).passingRadius*1000,
-  //     circleId: CircleId(position.toString()),
-  //     center: position,
-  //   );
-  //   setState(() {
-  //     point['passingLocation']=marker;
-  //     round['passingLocation']=circle;
-  //   });
-  // }
 
   Future<bool> getAddress(String address) async {
     String uri = "https://web.onlinetraq.com/module/APIv1/006-2.php";

@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "165501878030",
+    "project_id": "ion-it",
+    "storage_bucket": "ion-it.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:165501878030:android:24018594696076e4ae215f",
+        "android_client_info": {
+          "package_name": "com.jclocal.ion_it"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "165501878030-k8mbohv0m45l11e9sii18jt6vu97d30u.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDZ_L5519mEgAXEgvpetT_MHFyV0YznBFw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "165501878030-k8mbohv0m45l11e9sii18jt6vu97d30u.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "165501878030-b5qc7eobfb95r30mj9m2037jepjsajdk.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.jclocal.ionIt"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -1,5 +1,6 @@
 import 'dart:convert';
-import 'package:geolocator/geolocator.dart';
+import 'dart:io';
+import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:ion_it/pages/home_page.dart';
 import 'package:dio/dio.dart';
@@ -10,10 +11,19 @@ import 'package:provider/provider.dart';
 import 'package:ion_it/main.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:location/location.dart';
+import 'package:app_settings/app_settings.dart';
+
+class Position {
+  var latitude;
+  var longitude;
+  Position(var latitude, var longitude) {
+    this.latitude = latitude;
+    this.longitude = longitude;
+  }
+}
 
 class LoginPage extends StatefulWidget {
-  final bool fromBegin;
-  const LoginPage({Key key, @required this.fromBegin}) : super(key: key);
+  const LoginPage({Key key}) : super(key: key);
   @override
   _LoginPageState createState() => _LoginPageState();
 }
@@ -24,6 +34,55 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController userController = TextEditingController();
   final TextEditingController passController = TextEditingController();
   final TextEditingController serverController = TextEditingController();
+  Map<String, String> hintText = {
+    'en':
+        'Please allow the location services and permission.\nIf your location permission is \n" Denied Forever ", go to settings and change it.',
+    'zh': '請打開定位服務並允許位置權限。\n如果裝置位置權限為\n「永不」，請到設定中變更為其他選擇。'
+  };
+
+  Map<String, List<String>> btnText = {
+    'en': ['settings', 'allow'],
+    'zh': ['設定', '允許'],
+  };
+
+  Future<bool> updateFCMToken(String server, String user, String pass) async {
+    String result = '';
+    String uri = "https://web.onlinetraq.com/module/APIv1/005-2fcm.php";
+    String token = Provider.of<Data>(context, listen: false).token;
+    int fromType = Platform.isIOS ? 1 : 2;
+    var jsonData = json.encode({
+      "server": server,
+      "user": user,
+      "pass": pass,
+      "token": token,
+      "fromtype": fromType,
+    });
+
+    FormData formData = FormData.fromMap({'data': jsonData});
+    print(formData.fields);
+    var statusCode;
+
+    try {
+      var response = await Dio().post(uri,
+          data: formData,
+          options: Options(
+              followRedirects: false,
+              validateStatus: (status) {
+                statusCode = status;
+                return true;
+              }));
+      print(response.data);
+      Map<String, dynamic> data = json.decode(response.data);
+      (statusCode == 200) && (data['result'] == 'S')
+          ? result = 'Y'
+          : result = 'N';
+    } catch (err) {}
+    if (result == 'Y') {
+      return true;
+    } else {
+      return false;
+    }
+  }
 
   Future<String> postLoginApi(String server, String user, String pass) async {
     String result = '';
@@ -46,7 +105,6 @@ class _LoginPageState extends State<LoginPage> {
       (statusCode == 200) && (data['result'] == 'S')
           ? result = 'Y'
           : result = 'N';
-
       if (result == 'Y') {
         List<String> accountData = [server, user, pass, jsonData];
         memberJson = jsonData;
@@ -87,58 +145,82 @@ class _LoginPageState extends State<LoginPage> {
     return loginData;
   }
 
-  Future<bool> _checkLocationServiceEnable() async {
-    var location = new Location();
+  Future<bool> findServiceEnable(Location location) async {
     bool _serviceEnabled = false;
-
-    _serviceEnabled = await location.serviceEnabled();
-    if (!_serviceEnabled) {
-      _serviceEnabled = await location.requestService();
+    try {
+      _serviceEnabled = await location.serviceEnabled();
+    } on PlatformException catch (err) {
+      _serviceEnabled = await findServiceEnable(location);
     }
     return _serviceEnabled;
   }
 
   Future<Position> _determinePosition() async {
-    print('into determine position');
-    bool serviceEnabled = false;
-    LocationPermission permission;
+    Location location = new Location();
+    Position position;
+    bool _serviceEnabled;
+    PermissionStatus _permissionGranted;
+    LocationData _locationData;
 
-    // Test if location services are enabled.
-    serviceEnabled = await _checkLocationServiceEnable();
-    if (!serviceEnabled) {
-      return null;
+    _serviceEnabled = await findServiceEnable(location);
+    _permissionGranted = await location.hasPermission();
+
+    if ((!_serviceEnabled) ||
+        (_permissionGranted != PermissionStatus.granted)) {
+      await showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          actions: [
+            TextButton(
+                onPressed: AppSettings.openLocationSettings,
+                child: Text(
+                    Provider.of<Data>(context, listen: false).localeName == 'zh'
+                        ? btnText['zh'][0]
+                        : btnText['en'][0])),
+            TextButton(
+                onPressed: () async {
+                  if (!_serviceEnabled) {
+                    _serviceEnabled = await location.requestService();
+                    if (!_serviceEnabled) {
+                      position = null;
+                    }
+                  }
+                  if (_permissionGranted == PermissionStatus.denied) {
+                    _permissionGranted = await location.requestPermission();
+                    if (_permissionGranted != PermissionStatus.granted) {
+                      position = null;
+                    }
+                  }
+                  Navigator.of(context).pop();
+                },
+                child: Text(
+                    Provider.of<Data>(context, listen: false).localeName == 'zh'
+                        ? btnText['zh'][1]
+                        : btnText['en'][1])),
+          ],
+          title: Text(
+              Provider.of<Data>(context, listen: false).localeName == 'zh'
+                  ? '需要定位權限'
+                  : 'Location Services Needed'),
+          content: Text(
+            Provider.of<Data>(context, listen: false).localeName == 'zh'
+                ? hintText['zh']
+                : hintText['en'],
+          ),
+        ),
+        barrierDismissible: false,
+      );
     }
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
+
+    //if service
+    _serviceEnabled = await findServiceEnable(location);
+    _permissionGranted = await location.hasPermission();
+
+    if (_serviceEnabled && _permissionGranted == PermissionStatus.granted) {
+      _locationData = await location.getLocation();
+      position = new Position(_locationData.latitude, _locationData.longitude);
     }
-
-    if (permission == LocationPermission.denied) {
-      // Permissions are denied, next time you could try
-      // requesting permissions again (this is also where
-      // Android's shouldShowRequestPermissionRationale
-      // returned true. According to Android guidelines
-      // your App should show an explanatory UI now.
-      print('Location permissions are denied');
-      return null;
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      // Permissions are denied forever, handle appropriately.
-      print(
-          'Location permissions are permanently denied, we cannot request permissions.');
-      return null;
-    }
-
-    // When we reach here, permissions are granted and we can
-    // continue accessing the position of the device.
-
-    var position = await Geolocator.getCurrentPosition();
-
     return position;
-
-    // When we reach here, permissions are granted and we can
-    // continue accessing the position of the device.
   }
 
   @override
@@ -367,6 +449,14 @@ class _LoginPageState extends State<LoginPage> {
                                 Navigator.pop(context);
                               });
                               if (result == 'Y') {
+                                if (Provider.of<Data>(context, listen: false)
+                                        .pushNotSwitch &&
+                                    Provider.of<Data>(context, listen: false)
+                                            .token !=
+                                        'invalid') {
+                                  await updateFCMToken(serverController.text,
+                                      userController.text, passController.text);
+                                }
                                 if (currentPosition != null) {
                                   Navigator.pushReplacement(
                                       context,
