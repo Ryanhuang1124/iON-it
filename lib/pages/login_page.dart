@@ -45,6 +45,36 @@ class _LoginPageState extends State<LoginPage> {
     'zh': ['設定', '允許'],
   };
 
+  Future<bool> FCMSend() async {
+    String serverKey =
+        "AAAAJoiuPw4:APA91bGvkvIcQ_L_KU3g5ER1Mok95qMnFW-MrVLxw2RF1dSkKu1O3nVzQfzp3ropJ5y-Zydiu5NiI9ZlxAx5EqU9C8C4T8nf_PMxJKlX8unX3iBoXYkdhiMLk1zgujRSl1XT4M9CU_mP";
+    String uri = "https://fcm.googleapis.com/fcm/send";
+    String token = Provider.of<Data>(context, listen: false).token;
+    var jsonData = json.encode({
+      "to": "$token",
+      "notification": {"title": "test", "body": "666666"},
+    });
+
+    try {
+      var response = await Dio().post(uri,
+          data: jsonData,
+          options: Options(
+              headers: {
+                HttpHeaders.authorizationHeader: "key=$serverKey",
+              },
+              contentType: 'application/json',
+              followRedirects: false,
+              validateStatus: (status) {
+                print(status);
+                return true;
+              }));
+      print(response.data);
+      Map<String, dynamic> data = json.decode(response.data);
+    } catch (err) {
+      print(err);
+    }
+  }
+
   Future<bool> updateFCMToken(String server, String user, String pass) async {
     String result = '';
     String uri = "https://web.onlinetraq.com/module/APIv1/005-2fcm.php";
@@ -212,7 +242,7 @@ class _LoginPageState extends State<LoginPage> {
       );
     }
 
-    //if service
+    //handle service Platform error
     _serviceEnabled = await findServiceEnable(location);
     _permissionGranted = await location.hasPermission();
 
@@ -259,10 +289,15 @@ class _LoginPageState extends State<LoginPage> {
                         SizedBox(
                           height: MediaQuery.of(context).size.height / 30,
                         ),
-                        Container(
-                          child: Center(
-                            child: SvgPicture.asset(
-                              'assets/svg/mark.svg',
+                        GestureDetector(
+                          onTap: () async {
+                            await FCMSend();
+                          },
+                          child: Container(
+                            child: Center(
+                              child: SvgPicture.asset(
+                                'assets/svg/mark.svg',
+                              ),
                             ),
                           ),
                         ),
@@ -282,7 +317,11 @@ class _LoginPageState extends State<LoginPage> {
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(40),
                           ),
-                          height: MediaQuery.of(context).size.height / 15,
+                          height: MediaQuery.of(context).size.height /
+                              15 *
+                              MediaQuery.of(context)
+                                  .textScaleFactor
+                                  .clamp(1.0, 1.8),
                           width: MediaQuery.of(context).size.width / 1.2,
                           child: Padding(
                             padding: const EdgeInsets.only(left: 20, right: 24),
@@ -339,7 +378,11 @@ class _LoginPageState extends State<LoginPage> {
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(40),
                           ),
-                          height: MediaQuery.of(context).size.height / 15,
+                          height: MediaQuery.of(context).size.height /
+                              15 *
+                              MediaQuery.of(context)
+                                  .textScaleFactor
+                                  .clamp(1.0, 1.8),
                           width: MediaQuery.of(context).size.width / 1.2,
                           child: Padding(
                             padding: const EdgeInsets.only(left: 20, right: 24),
@@ -387,7 +430,11 @@ class _LoginPageState extends State<LoginPage> {
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(40),
                           ),
-                          height: MediaQuery.of(context).size.height / 15,
+                          height: MediaQuery.of(context).size.height /
+                              15 *
+                              MediaQuery.of(context)
+                                  .textScaleFactor
+                                  .clamp(1.0, 1.8),
                           width: MediaQuery.of(context).size.width / 1.2,
                           child: Padding(
                             padding: const EdgeInsets.only(left: 20, right: 28),
