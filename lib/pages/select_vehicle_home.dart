@@ -99,6 +99,9 @@ class _SelectVehicleHomeState extends State<SelectVehicleHome> {
   }
 
   Future<String> getAddress(LatLng point) async {
+    String lang = Provider.of<Data>(context, listen: false).localeName == 'zh'
+        ? "zh-TW"
+        : "en";
     String uri = "https://web.onlinetraq.com/module/APIv1/006-1.php";
     var data = json.decode(widget.jsonData);
     var jsonData = json.encode({
@@ -107,7 +110,7 @@ class _SelectVehicleHomeState extends State<SelectVehicleHome> {
       "pass": data['pass'],
       "lat": point.latitude,
       "lng": point.longitude,
-      "lang": "zh-TW"
+      "lang": lang,
     });
     FormData formData = FormData.fromMap({'data': jsonData});
     var response = await Dio().post(uri, data: formData);
