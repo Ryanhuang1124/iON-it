@@ -29,7 +29,7 @@ void doFirebaseConfig() async {
       ?.createNotificationChannel(channel);
   await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
     alert: true,
-    badge: true,
+    badge: false,
     sound: true,
   );
 
@@ -38,7 +38,7 @@ void doFirebaseConfig() async {
   NotificationSettings settings = await messaging.requestPermission(
     alert: true,
     announcement: false,
-    badge: true,
+    badge: false,
     carPlay: false,
     criticalAlert: false,
     provisional: false,
@@ -222,6 +222,57 @@ class Data extends ChangeNotifier {
     this.markers[id] = marker;
     notifyListeners();
   }
+
+  void initAllProperties() {
+    String localeName;
+    this.localeName = localeName;
+    String server;
+    this.server = server;
+    String user;
+    this.user = user;
+    String pass;
+    this.pass = pass;
+    var token;
+    this.token = token;
+    this.allCheckedValue = false;
+    this.checkBoxValue = [];
+    this.smartFenceRadius = 150;
+    LatLng smartFenceMarker;
+    this.smartFenceMarker = smartFenceMarker;
+    String smartFenceVehicle;
+    this.smartFenceVehicle = smartFenceVehicle;
+    this.smartData = <String, SmartFenceData>{};
+    this.smartFenceIndoor = false;
+    this.immobilizerSwitch = <String, bool>{};
+    String immoVehicle;
+    this.immoVehicle = immoVehicle;
+    String historyVehicle;
+    this.historyVehicle = historyVehicle;
+    String historyId;
+    this.historyId = historyId;
+    this.historyDate = DateTime.now();
+    this.historyStTime = DateTime.now();
+    this.historyEdTime = DateTime.now();
+    this.passingRadius = 0;
+    LatLng passingPosition;
+    this.passingPosition = passingPosition;
+    this.passingDate = DateTime.now();
+    this.pushNotSwitch = false;
+    this.eventFilter = 'name';
+    String diagnosisVehicle;
+    this.diagnosisVehicle = diagnosisVehicle;
+    String diagnosisId;
+    this.diagnosisId = diagnosisId;
+    this.homeVehicleSelect = {};
+    GoogleMapController mapController;
+    this.mapController = mapController;
+    this.descriptors = <String, MarkerData>{};
+    this.markers = <String, Marker>{};
+    InfoWidgetRoute infoWidgetRoute;
+    this.infoWidgetRoute = infoWidgetRoute;
+    this.focus = false;
+    this.focusVehicleSelect = '';
+  }
 }
 
 class Ion_it extends StatefulWidget {
@@ -231,6 +282,7 @@ class Ion_it extends StatefulWidget {
 
 class _Ion_itState extends State<Ion_it> {
   LatLng myLocation;
+  var fontScale;
 
   Future<bool> isShareNotificationOn() async {
     bool isNotificationOn = false;
@@ -286,7 +338,6 @@ class _Ion_itState extends State<Ion_it> {
             });
       }
     });
-
     super.initState();
   }
 
@@ -295,6 +346,15 @@ class _Ion_itState extends State<Ion_it> {
     return ChangeNotifierProvider(
         create: (context) => Data(),
         child: MaterialApp(
+          builder: (context, child) {
+            final mediaQueryData = MediaQuery.of(context);
+            fontScale = mediaQueryData.textScaleFactor.clamp(1.0, 1.8);
+
+            return MediaQuery(
+              child: child,
+              data: MediaQuery.of(context).copyWith(textScaleFactor: fontScale),
+            );
+          },
           routes: {
             '/login': (BuildContext context) => LoginPage(),
             '/homepage': (BuildContext context) => HomePage(),
