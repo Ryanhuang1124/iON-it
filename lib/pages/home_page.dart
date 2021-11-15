@@ -148,6 +148,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   }
 
   Future<String> getAddress(LatLng point) async {
+    String lang = Provider.of<Data>(context, listen: false).localeName == 'zh'
+        ? "zh-TW"
+        : "en";
     String uri = "https://web.onlinetraq.com/module/APIv1/006-1.php";
     var data = json.decode(widget.jsonData);
     var jsonData = json.encode({
@@ -156,7 +159,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       "pass": data['pass'],
       "lat": point.latitude,
       "lng": point.longitude,
-      "lang": "zh-TW"
+      "lang": lang,
     });
     FormData formData = FormData.fromMap({'data': jsonData});
     var response = await Dio().post(uri, data: formData);
@@ -299,7 +302,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                 "${item.value.value[0]} ",
                                 maxLines: 2,
                                 style: TextStyle(
-                                    fontSize: 15, fontFamily: 'Arial'),
+                                    fontSize: 13 /
+                                        MediaQuery.of(context).textScaleFactor,
+                                    fontFamily: 'Arial'),
+                                overflow: TextOverflow.visible,
                               ),
                             ),
                             Container(
@@ -310,9 +316,16 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                       child: SvgPicture.asset(
                                         'assets/svg/clock.svg',
                                       )),
-                                  Text(item.value.value[3],
-                                      style: TextStyle(
-                                          fontSize: 15, fontFamily: 'Arial')),
+                                  Text(
+                                    item.value.value[3],
+                                    maxLines: 2,
+                                    style: TextStyle(
+                                        fontSize: 13 /
+                                            MediaQuery.of(context)
+                                                .textScaleFactor,
+                                        fontFamily: 'Arial'),
+                                    overflow: TextOverflow.visible,
+                                  ),
                                 ],
                               ),
                             )
@@ -343,7 +356,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                                     : item.value.address,
                                 maxLines: 2,
                                 style: TextStyle(
-                                    fontSize: 13, fontFamily: 'Arial'),
+                                    fontSize: 13 /
+                                        MediaQuery.of(context).textScaleFactor,
+                                    fontFamily: 'Arial'),
                                 overflow: TextOverflow.visible,
                               ),
                             ),
@@ -371,8 +386,26 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                               width: 10,
                             ),
                             item.value.value[2] == 'Y'
-                                ? Text(item.value.value[4])
-                                : Text('Unknow'),
+                                ? Text(
+                                    item.value.value[4],
+                                    maxLines: 2,
+                                    style: TextStyle(
+                                        fontSize: 13 /
+                                            MediaQuery.of(context)
+                                                .textScaleFactor,
+                                        fontFamily: 'Arial'),
+                                    overflow: TextOverflow.visible,
+                                  )
+                                : Text(
+                                    'Unknow',
+                                    maxLines: 2,
+                                    style: TextStyle(
+                                        fontSize: 13 /
+                                            MediaQuery.of(context)
+                                                .textScaleFactor,
+                                        fontFamily: 'Arial'),
+                                    overflow: TextOverflow.visible,
+                                  ),
                             Expanded(child: SizedBox()),
                           ],
                         ),
@@ -648,26 +681,32 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                               border: Border(
                                   bottom: BorderSide(
                                       color: Colors.white, width: 1))),
-                          height: MediaQuery.of(context).size.height / 12,
-                          child: Center(
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: MediaQuery.of(context).size.width / 7,
-                                  child: SvgPicture.asset(
-                                    'assets/svg/smartfence.svg',
-                                    height: 30,
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 16, bottom: 16),
+                            child: Center(
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width:
+                                        MediaQuery.of(context).size.width / 7,
+                                    child: SvgPicture.asset(
+                                      'assets/svg/smartfence.svg',
+                                      height: 30,
+                                    ),
                                   ),
-                                ),
-                                Text(
-                                  'Smart Fence',
-                                  style: TextStyle(
-                                    fontFamily: 'Arial',
-                                    fontSize: 22,
-                                    color: Colors.white,
+                                  Expanded(
+                                    child: Text(
+                                      'Smart Fence',
+                                      maxLines: 2,
+                                      style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 22,
+                                          fontFamily: 'Arial'),
+                                      overflow: TextOverflow.visible,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ),
@@ -692,26 +731,31 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                               bottom: BorderSide(color: Colors.white, width: 1),
                             ),
                           ),
-                          height: MediaQuery.of(context).size.height / 12,
-                          child: Center(
-                            child: Row(
-                              children: [
-                                Container(
-                                    width:
-                                        MediaQuery.of(context).size.width / 7,
-                                    child: SvgPicture.asset(
-                                      'assets/svg/findmycar.svg',
-                                      height: 30,
-                                    )),
-                                Text(
-                                  'Find My Car',
-                                  style: TextStyle(
-                                    fontFamily: 'Arial',
-                                    fontSize: 22,
-                                    color: Colors.white,
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 16, bottom: 16),
+                            child: Center(
+                              child: Row(
+                                children: [
+                                  Container(
+                                      width:
+                                          MediaQuery.of(context).size.width / 7,
+                                      child: SvgPicture.asset(
+                                        'assets/svg/findmycar.svg',
+                                        height: 30,
+                                      )),
+                                  Expanded(
+                                    child: Text(
+                                      'Find My Car',
+                                      maxLines: 2,
+                                      style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 22,
+                                          fontFamily: 'Arial'),
+                                      overflow: TextOverflow.visible,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ),
@@ -733,26 +777,31 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                               border: Border(
                                   bottom: BorderSide(
                                       color: Colors.white, width: 1))),
-                          height: MediaQuery.of(context).size.height / 12,
-                          child: Center(
-                            child: Row(
-                              children: [
-                                Container(
-                                    width:
-                                        MediaQuery.of(context).size.width / 7,
-                                    child: SvgPicture.asset(
-                                      'assets/svg/immobiliser.svg',
-                                      height: 30,
-                                    )),
-                                Text(
-                                  'Immobiliser',
-                                  style: TextStyle(
-                                    fontFamily: 'Arial',
-                                    fontSize: 22,
-                                    color: Colors.white,
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 16, bottom: 16),
+                            child: Center(
+                              child: Row(
+                                children: [
+                                  Container(
+                                      width:
+                                          MediaQuery.of(context).size.width / 7,
+                                      child: SvgPicture.asset(
+                                        'assets/svg/immobiliser.svg',
+                                        height: 30,
+                                      )),
+                                  Expanded(
+                                    child: Text(
+                                      'Immobiliser',
+                                      maxLines: 2,
+                                      style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 22,
+                                          fontFamily: 'Arial'),
+                                      overflow: TextOverflow.visible,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ),
@@ -779,26 +828,31 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                               border: Border(
                                   bottom: BorderSide(
                                       color: Colors.white, width: 1))),
-                          height: MediaQuery.of(context).size.height / 12,
-                          child: Center(
-                            child: Row(
-                              children: [
-                                Container(
-                                    width:
-                                        MediaQuery.of(context).size.width / 7,
-                                    child: SvgPicture.asset(
-                                      'assets/svg/passingbyrecord.svg',
-                                      height: 30,
-                                    )),
-                                Text(
-                                  'Passing-by Record',
-                                  style: TextStyle(
-                                    fontFamily: 'Arial',
-                                    fontSize: 22,
-                                    color: Colors.white,
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 16, bottom: 16),
+                            child: Center(
+                              child: Row(
+                                children: [
+                                  Container(
+                                      width:
+                                          MediaQuery.of(context).size.width / 7,
+                                      child: SvgPicture.asset(
+                                        'assets/svg/passingbyrecord.svg',
+                                        height: 30,
+                                      )),
+                                  Expanded(
+                                    child: Text(
+                                      'Passing-by Record',
+                                      maxLines: 2,
+                                      style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 22,
+                                          fontFamily: 'Arial'),
+                                      overflow: TextOverflow.visible,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ),
@@ -816,26 +870,31 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                           });
                         },
                         child: Container(
-                          height: MediaQuery.of(context).size.height / 12,
-                          child: Center(
-                            child: Row(
-                              children: [
-                                Container(
-                                    width:
-                                        MediaQuery.of(context).size.width / 7,
-                                    child: SvgPicture.asset(
-                                      'assets/svg/history.svg',
-                                      height: 30,
-                                    )),
-                                Text(
-                                  'History',
-                                  style: TextStyle(
-                                    fontFamily: 'Arial',
-                                    fontSize: 22,
-                                    color: Colors.white,
+                          child: Padding(
+                            padding: const EdgeInsets.only(top: 16, bottom: 16),
+                            child: Center(
+                              child: Row(
+                                children: [
+                                  Container(
+                                      width:
+                                          MediaQuery.of(context).size.width / 7,
+                                      child: SvgPicture.asset(
+                                        'assets/svg/history.svg',
+                                        height: 30,
+                                      )),
+                                  Expanded(
+                                    child: Text(
+                                      'History',
+                                      maxLines: 2,
+                                      style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 22,
+                                          fontFamily: 'Arial'),
+                                      overflow: TextOverflow.visible,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ),
