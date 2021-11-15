@@ -134,209 +134,224 @@ class _SettingState extends State<Setting> {
               SizedBox(
                 height: MediaQuery.of(context).size.height / 17,
               ),
-              Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                ),
-                child: Column(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.only(left: 12.0, right: 12),
-                      child: Container(
-                        height: 70,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Push event notification',
-                              style:
-                                  TextStyle(fontFamily: 'Arial', fontSize: 22),
-                            ),
-                            FutureBuilder<bool>(
-                                future: isShareNotificationOn(),
-                                builder: (context, isNotificationOn) {
-                                  if (isNotificationOn.hasData) {
-                                    Provider.of<Data>(context, listen: false)
-                                        .changePushSwitch(
-                                            isNotificationOn.data);
-                                  }
-                                  return CupertinoSwitch(
-                                      value: Provider.of<Data>(context)
-                                          .pushNotSwitch,
-                                      onChanged: (newValue) async {
-                                        showDialog(
-                                            context: context,
-                                            barrierDismissible: false,
-                                            builder: (context) => WillPopScope(
-                                                onWillPop: () =>
-                                                    Future.value(false),
-                                                child:
-                                                    CupertinoActivityIndicator(
-                                                  radius: 20,
-                                                  animating: true,
-                                                )));
-                                        Provider.of<Data>(context,
-                                                listen: false)
-                                            .changePushSwitch(newValue);
-                                        await changeShareNotification(
-                                                newValue: newValue)
-                                            .then((value) async {
-                                          if (newValue) {
-                                            await updateFCMToken();
-                                          } else {
-                                            await cancelFCM();
-                                          }
-                                          setState(() {
-                                            Navigator.of(context).pop();
+              Expanded(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                  ),
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(left: 12.0, right: 12),
+                        child: Container(
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'Push event notification',
+                                  style: TextStyle(
+                                      fontFamily: 'Arial', fontSize: 22),
+                                  maxLines: 2,
+                                ),
+                              ),
+                              FutureBuilder<bool>(
+                                  future: isShareNotificationOn(),
+                                  builder: (context, isNotificationOn) {
+                                    if (isNotificationOn.hasData) {
+                                      Provider.of<Data>(context, listen: false)
+                                          .changePushSwitch(
+                                              isNotificationOn.data);
+                                    }
+                                    return CupertinoSwitch(
+                                        value: Provider.of<Data>(context)
+                                            .pushNotSwitch,
+                                        onChanged: (newValue) async {
+                                          showDialog(
+                                              context: context,
+                                              barrierDismissible: false,
+                                              builder: (context) =>
+                                                  WillPopScope(
+                                                      onWillPop: () =>
+                                                          Future.value(false),
+                                                      child:
+                                                          CupertinoActivityIndicator(
+                                                        radius: 20,
+                                                        animating: true,
+                                                      )));
+                                          Provider.of<Data>(context,
+                                                  listen: false)
+                                              .changePushSwitch(newValue);
+                                          await changeShareNotification(
+                                                  newValue: newValue)
+                                              .then((value) async {
+                                            if (newValue) {
+                                              await updateFCMToken();
+                                            } else {
+                                              await cancelFCM();
+                                            }
+                                            setState(() {
+                                              Navigator.of(context).pop();
+                                            });
                                           });
                                         });
-                                      });
-                                }),
-                          ],
+                                  }),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(left: 12.0, right: 12),
-                      child: Container(
-                        decoration: BoxDecoration(
-                            border: Border(
-                                top: BorderSide(
-                                    width: 1, color: Colors.black26))),
-                        height: 70,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Event log',
-                              style:
-                                  TextStyle(fontFamily: 'Arial', fontSize: 22),
-                            ),
-                            IconButton(
-                                icon: Icon(
-                                  Icons.navigate_next,
-                                  size: 40,
-                                  color: Colors.black45,
+                      Padding(
+                        padding: const EdgeInsets.only(left: 12.0, right: 12),
+                        child: Container(
+                          decoration: BoxDecoration(
+                              border: Border(
+                                  top: BorderSide(
+                                      width: 1, color: Colors.black26))),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'Event log',
+                                  style: TextStyle(
+                                      fontFamily: 'Arial', fontSize: 22),
                                 ),
-                                onPressed: () {
-                                  Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) => EventLog(
-                                              jsonData: widget.jsonData)));
-                                }),
-                          ],
+                              ),
+                              IconButton(
+                                  icon: Icon(
+                                    Icons.navigate_next,
+                                    size: 40,
+                                    color: Colors.black45,
+                                  ),
+                                  onPressed: () {
+                                    Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) => EventLog(
+                                                jsonData: widget.jsonData)));
+                                  }),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(left: 12.0, right: 12),
-                      child: Container(
-                        decoration: BoxDecoration(
-                            border: Border(
-                                top: BorderSide(
-                                    width: 1, color: Colors.black26))),
-                        height: 70,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Diagnosis & Support',
-                              style:
-                                  TextStyle(fontFamily: 'Arial', fontSize: 22),
-                            ),
-                            IconButton(
-                                icon: Icon(
-                                  Icons.navigate_next,
-                                  size: 40,
-                                  color: Colors.black45,
+                      Padding(
+                        padding: const EdgeInsets.only(left: 12.0, right: 12),
+                        child: Container(
+                          decoration: BoxDecoration(
+                              border: Border(
+                                  top: BorderSide(
+                                      width: 1, color: Colors.black26))),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'Diagnosis & Support',
+                                  style: TextStyle(
+                                      fontFamily: 'Arial', fontSize: 22),
                                 ),
-                                onPressed: () {
-                                  Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) =>
-                                              SelectVehicleDiagnosis(
-                                                  jsonData: widget.jsonData)));
-                                }),
-                          ],
+                              ),
+                              IconButton(
+                                  icon: Icon(
+                                    Icons.navigate_next,
+                                    size: 40,
+                                    color: Colors.black45,
+                                  ),
+                                  onPressed: () {
+                                    Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) =>
+                                                SelectVehicleDiagnosis(
+                                                    jsonData:
+                                                        widget.jsonData)));
+                                  }),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.only(left: 12.0, right: 12),
-                      child: Container(
-                        decoration: BoxDecoration(
-                            border: Border(
-                                top: BorderSide(
-                                    width: 1, color: Colors.black26))),
-                        height: 70,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Log out',
-                              style:
-                                  TextStyle(fontFamily: 'Arial', fontSize: 22),
-                            ),
-                            IconButton(
-                                icon: Icon(
-                                  Icons.navigate_next,
-                                  size: 40,
-                                  color: Colors.black45,
+                      Padding(
+                        padding: const EdgeInsets.only(left: 12.0, right: 12),
+                        child: Container(
+                          decoration: BoxDecoration(
+                              border: Border(
+                                  top: BorderSide(
+                                      width: 1, color: Colors.black26))),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  'Log out',
+                                  style: TextStyle(
+                                      fontFamily: 'Arial', fontSize: 22),
                                 ),
-                                onPressed: () {
-                                  showDialog(
-                                      context: context,
-                                      builder: (BuildContext context) =>
-                                          CupertinoAlertDialog(
-                                            title: Text(
-                                                "Are you sure to log out?"),
-                                            actions: <Widget>[
-                                              CupertinoDialogAction(
-                                                onPressed: () {
-                                                  Navigator.of(context).pop();
-                                                },
-                                                isDefaultAction: true,
-                                                child: Text('Cancel'),
-                                              ),
-                                              CupertinoDialogAction(
-                                                onPressed: () async {
-                                                  showDialog(
-                                                      context: context,
-                                                      barrierDismissible: false,
-                                                      builder: (context) =>
-                                                          WillPopScope(
-                                                              onWillPop: () =>
-                                                                  Future.value(
-                                                                      false),
-                                                              child:
-                                                                  CupertinoActivityIndicator(
-                                                                radius: 20,
-                                                                animating: true,
-                                                              )));
-                                                  if (Provider.of<Data>(context,
-                                                          listen: false)
-                                                      .pushNotSwitch) {
-                                                    await cancelFCM();
-                                                  }
-                                                  Navigator.pushAndRemoveUntil(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                          builder: (context) =>
-                                                              LoginPage()),
-                                                      (route) => false);
-                                                },
-                                                child: Text("Yes"),
-                                              )
-                                            ],
-                                          ));
-                                }),
-                          ],
+                              ),
+                              IconButton(
+                                  icon: Icon(
+                                    Icons.navigate_next,
+                                    size: 40,
+                                    color: Colors.black45,
+                                  ),
+                                  onPressed: () {
+                                    showDialog(
+                                        context: context,
+                                        builder: (BuildContext context) =>
+                                            CupertinoAlertDialog(
+                                              title: Text(
+                                                  "Are you sure to log out?"),
+                                              actions: <Widget>[
+                                                CupertinoDialogAction(
+                                                  onPressed: () {
+                                                    Navigator.of(context).pop();
+                                                  },
+                                                  isDefaultAction: true,
+                                                  child: Text('Cancel'),
+                                                ),
+                                                CupertinoDialogAction(
+                                                  onPressed: () async {
+                                                    showDialog(
+                                                        context: context,
+                                                        barrierDismissible:
+                                                            false,
+                                                        builder: (context) =>
+                                                            WillPopScope(
+                                                                onWillPop: () =>
+                                                                    Future.value(
+                                                                        false),
+                                                                child:
+                                                                    CupertinoActivityIndicator(
+                                                                  radius: 20,
+                                                                  animating:
+                                                                      true,
+                                                                )));
+                                                    if (Provider.of<Data>(
+                                                            context,
+                                                            listen: false)
+                                                        .pushNotSwitch) {
+                                                      await cancelFCM();
+                                                    }
+                                                    Provider.of<Data>(context,
+                                                            listen: false)
+                                                        .initAllProperties();
+                                                    Navigator.pushAndRemoveUntil(
+                                                        context,
+                                                        MaterialPageRoute(
+                                                            builder: (context) =>
+                                                                LoginPage()),
+                                                        (route) => false);
+                                                  },
+                                                  child: Text("Yes"),
+                                                )
+                                              ],
+                                            ));
+                                  }),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               )
             ],
