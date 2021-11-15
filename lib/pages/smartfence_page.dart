@@ -159,8 +159,6 @@ class _SmartFenceState extends State<SmartFence> {
       allVehiclesData[key].add(value['at6']);
     });
 
-    print(allVehiclesData);
-
     return allVehiclesData;
   }
 
@@ -264,7 +262,6 @@ class _SmartFenceState extends State<SmartFence> {
       uri = '$apeN,park2,0*';
     }
     String totalUri = 'sms:$phone?body=%23%23$uri';
-    print(totalUri);
 
     String message = "##$uri";
     List<String> recipents = [phone];
