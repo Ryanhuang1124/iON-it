@@ -225,12 +225,12 @@ class _HistoryDetailState extends State<HistoryDetail> {
                 if (obj.status == 'S') {
                   bottomList.add(
                     Container(
+                      width: MediaQuery.of(context).size.width,
                       decoration: BoxDecoration(
                         border: Border(
                           bottom: BorderSide(width: 1, color: Colors.black26),
                         ),
                       ),
-                      height: MediaQuery.of(context).size.height * 0.2,
                       child: Padding(
                         padding: const EdgeInsets.only(left: 8, right: 8),
                         child: Row(
@@ -251,7 +251,6 @@ class _HistoryDetailState extends State<HistoryDetail> {
                                       style: TextStyle(
                                           fontSize: 20, fontFamily: 'Arial'),
                                       softWrap: true,
-                                      maxLines: 2,
                                     ),
                                     Text(
                                       'Duration: ${durationToString(obj.duration)}',
@@ -260,16 +259,14 @@ class _HistoryDetailState extends State<HistoryDetail> {
                                       softWrap: true,
                                       maxLines: 2,
                                     ),
-                                    Expanded(
-                                      child: Text(
-                                        obj.stopAddress != null
-                                            ? obj.stopAddress
-                                            : '',
-                                        style: TextStyle(
-                                            fontSize: 20, fontFamily: 'Arial'),
-                                        softWrap: true,
-                                        maxLines: 3,
-                                      ),
+                                    Text(
+                                      obj.stopAddress != null
+                                          ? obj.stopAddress
+                                          : '',
+                                      style: TextStyle(
+                                          fontSize: 20, fontFamily: 'Arial'),
+                                      softWrap: true,
+                                      maxLines: 3,
                                     )
                                   ],
                                 ),
@@ -289,7 +286,6 @@ class _HistoryDetailState extends State<HistoryDetail> {
                           bottom: BorderSide(width: 1, color: Colors.black26),
                         ),
                       ),
-                      height: MediaQuery.of(context).size.height * 0.2,
                       child: Padding(
                         padding: const EdgeInsets.only(left: 8, right: 8),
                         child: Row(
@@ -298,33 +294,35 @@ class _HistoryDetailState extends State<HistoryDetail> {
                               'assets/svg/driving.svg',
                               width: MediaQuery.of(context).size.height * 0.1,
                             ),
-                            Padding(
-                              padding: const EdgeInsets.only(
-                                  top: 12, bottom: 12, left: 12),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Date: ${obj.stDate}',
-                                    style: TextStyle(
-                                        fontSize: 20, fontFamily: 'Arial'),
-                                  ),
-                                  Text(
-                                    'Duration: ${durationToString(obj.duration)}',
-                                    style: TextStyle(
-                                        fontSize: 20, fontFamily: 'Arial'),
-                                  ),
-                                  Text(
-                                    'Distance: ${(double.parse(obj.distance) / 1000).toStringAsFixed(2)}  km ',
-                                    style: TextStyle(
-                                        fontSize: 20, fontFamily: 'Arial'),
-                                  ),
-                                  Text(
-                                    'max. speed:${(int.parse(obj.maxSpeed) / 1000).toStringAsFixed(2)}  km/h',
-                                    style: TextStyle(
-                                        fontSize: 20, fontFamily: 'Arial'),
-                                  )
-                                ],
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.only(
+                                    top: 12, bottom: 12, left: 12),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Date: ${obj.stDate}',
+                                      style: TextStyle(
+                                          fontSize: 20, fontFamily: 'Arial'),
+                                    ),
+                                    Text(
+                                      'Duration: ${durationToString(obj.duration)}',
+                                      style: TextStyle(
+                                          fontSize: 20, fontFamily: 'Arial'),
+                                    ),
+                                    Text(
+                                      'Distance: ${(double.parse(obj.distance) / 1000).toStringAsFixed(2)}  km ',
+                                      style: TextStyle(
+                                          fontSize: 20, fontFamily: 'Arial'),
+                                    ),
+                                    Text(
+                                      'max. speed:${(int.parse(obj.maxSpeed) / 1000).toStringAsFixed(2)}  km/h',
+                                      style: TextStyle(
+                                          fontSize: 20, fontFamily: 'Arial'),
+                                    )
+                                  ],
+                                ),
                               ),
                             ),
                           ],
@@ -341,7 +339,6 @@ class _HistoryDetailState extends State<HistoryDetail> {
                           bottom: BorderSide(width: 1, color: Colors.black26),
                         ),
                       ),
-                      height: MediaQuery.of(context).size.height * 0.2,
                       child: Padding(
                         padding: const EdgeInsets.only(left: 8, right: 8),
                         child: Row(
@@ -371,16 +368,14 @@ class _HistoryDetailState extends State<HistoryDetail> {
                                       softWrap: true,
                                       maxLines: 2,
                                     ),
-                                    Expanded(
-                                      child: Text(
-                                        obj.stopAddress != null
-                                            ? obj.stopAddress
-                                            : '',
-                                        style: TextStyle(
-                                            fontSize: 20, fontFamily: 'Arial'),
-                                        softWrap: true,
-                                        maxLines: 3,
-                                      ),
+                                    Text(
+                                      obj.stopAddress != null
+                                          ? obj.stopAddress
+                                          : '',
+                                      style: TextStyle(
+                                          fontSize: 20, fontFamily: 'Arial'),
+                                      softWrap: true,
+                                      maxLines: 3,
                                     )
                                   ],
                                 ),
@@ -440,10 +435,9 @@ class _HistoryDetailState extends State<HistoryDetail> {
                       width: MediaQuery.of(context).size.width,
                     ),
                     Expanded(
-                      child: Container(
-                        child: ListView(
-                          children: bottomList,
-                        ),
+                      child: ListView(
+                        shrinkWrap: true,
+                        children: bottomList,
                       ),
                     ),
                   ],
